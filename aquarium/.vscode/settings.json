@@ -5,5 +5,8 @@
     "java.project.outputPath": "bin",
     "java.project.referencedLibraries": [
         "lib/**/*.jar"
-    ]
+    ],
+    "files.watcherExclude": {
+        "**/target/**": true
+    }
 }
