@@ -1,0 +1,6 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "aqua-blatt2-src/aqua/blatt1/lib/messaging.jar"
+    ]
+}

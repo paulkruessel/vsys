@@ -1,0 +1,70 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Poisoner",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.broker.Poisoner",
+            "projectName": "aqua-blatt2-src_f471c6fb"
+        },
+        {
+            "type": "java",
+            "name": "Aqualife",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.client.Aqualife",
+            "projectName": "aqua-blatt2-src_f471c6fb"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.broker.Main",
+            "projectName": "aqua-blatt2-src_f471c6fb"
+        },
+        {
+            "type": "java",
+            "name": "Aqualife",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.client.Aqualife",
+            "projectName": "aqua-blatt1-src_f463af7a"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.broker.Main",
+            "projectName": "aqua-blatt1-src_f463af7a"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.broker.Main",
+            "projectName": "aqua-blatt1-src_77ae47b2"
+        },
+        {
+            "type": "java",
+            "name": "Broker",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.broker.Broker",
+            "projectName": "aqua-blatt1-src_77ae47b2"
+        },
+        {
+            "type": "java",
+            "name": "Aqualife",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.client.Aqualife",
+            "projectName": "aqua-blatt1-src_77ae47b2"
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        }
+    ]
+}
