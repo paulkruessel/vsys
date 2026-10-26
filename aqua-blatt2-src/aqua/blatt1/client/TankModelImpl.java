@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.Observable;
 import java.util.Random;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -23,6 +25,9 @@ public class TankModelImpl implements TankModel {
 
 	private InetSocketAddress leftNeighbor;
 	private InetSocketAddress rightNeighbor;
+
+	private boolean hasToken = false;
+	private final Timer timer = new Timer("TokenTimer", true);
 
 	public TankModelImpl(ClientCommunicator.ClientForwarder forwarder) {
 		this.fishies = Collections.newSetFromMap(new ConcurrentHashMap<FishModel, Boolean>());
@@ -81,11 +86,14 @@ public class TankModelImpl implements TankModel {
 			fish.update();
 
 			if (fish.hitsEdge()) {
-				
-				if (fish.getDirection() == Direction.LEFT) {
-					forwarder.handOff(fish, leftNeighbor);
+				if (hasToken()) {
+					if (fish.getDirection() == Direction.LEFT) {
+						forwarder.handOff(fish, leftNeighbor);
+					} else {
+						forwarder.handOff(fish, rightNeighbor);
+					}
 				} else {
-					forwarder.handOff(fish, rightNeighbor);
+					fish.reverse();
 				}
 			}
 
@@ -106,7 +114,29 @@ public class TankModelImpl implements TankModel {
 
 	@Override
 	public synchronized void finish() {
+		timer.cancel();
 		forwarder.deregister(id);
+	}
+
+	@Override
+	public void receiveToken() {
+		hasToken = true;
+
+		timer.schedule(new TimerTask() {
+			@Override 
+			public void run() {
+				synchronized (TankModelImpl.this) {
+					hasToken = false;
+				forwarder.sendToken(leftNeighbor);
+				}
+			}
+    	}, 2000L);
+		
+	}
+
+	@Override
+	public synchronized boolean hasToken() {
+		return hasToken;
 	}
 
 }

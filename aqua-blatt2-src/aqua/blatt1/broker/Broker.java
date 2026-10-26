@@ -14,7 +14,7 @@ import aqua.blatt1.common.msgtypes.HandoffRequest;
 import aqua.blatt1.common.msgtypes.NeighbourUpdate;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
-
+import aqua.blatt1.common.msgtypes.Token;
 import messaging.Endpoint;
 import messaging.Message;
 import aqua.blatt1.common.Direction;
@@ -23,6 +23,7 @@ public class Broker {
     private ClientCollection<InetSocketAddress> clients;
     private final Endpoint ENDPOINT = new Endpoint(4711);
     private int idCounter = 0;
+    private boolean isFirstClient = true;
 
     private boolean stopRequested = false;
     private ReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -83,6 +84,11 @@ public class Broker {
             //an den rechten Nachbarn
             ENDPOINT.send(rightNeighbour, new NeighbourUpdate(clients.getRightNeighorOf(clients.indexOf(rightNeighbour)), Direction.RIGHT));
             ENDPOINT.send(rightNeighbour, new NeighbourUpdate(addr, Direction.LEFT));
+
+            if (isFirstClient) {
+                isFirstClient = false;
+                ENDPOINT.send(addr, new Token());
+            }
         } finally {
             rwLock.writeLock().unlock();
         } 
@@ -100,6 +106,7 @@ public class Broker {
             clients.remove(index);
 
             if (clients.size() == 0) {
+                isFirstClient = true;
                 return;
             }
 

@@ -11,6 +11,7 @@ import aqua.blatt1.common.msgtypes.HandoffRequest;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
 import aqua.blatt1.common.msgtypes.NeighbourUpdate;
+import aqua.blatt1.common.msgtypes.Token;
 
 public class ClientCommunicator {
 	private final Endpoint endpoint;
@@ -37,6 +38,10 @@ public class ClientCommunicator {
 		public void handOff(FishModel fish, InetSocketAddress neighbour) {
 			endpoint.send(neighbour, new HandoffRequest(fish));
 		}
+
+		public void sendToken(InetSocketAddress neighbour) {
+			endpoint.send(neighbour, new Token());
+		}
 	}
 
 	public class ClientReceiver extends Thread {
@@ -59,6 +64,10 @@ public class ClientCommunicator {
 
 				if (msg.getPayload() instanceof NeighbourUpdate) {
 					tankModel.updateNeighbor(((NeighbourUpdate) msg.getPayload()).getDirection(), ((NeighbourUpdate) msg.getPayload()).getNewNeighborAddress());
+				}
+
+				if (msg.getPayload() instanceof Token) {
+					tankModel.receiveToken();
 				}
 
 			}
