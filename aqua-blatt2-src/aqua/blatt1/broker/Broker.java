@@ -11,6 +11,7 @@ import javax.swing.JOptionPane;
 import aqua.blatt1.common.FishModel;
 import aqua.blatt1.common.msgtypes.DeregisterRequest;
 import aqua.blatt1.common.msgtypes.HandoffRequest;
+import aqua.blatt1.common.msgtypes.NeighbourUpdate;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
 
@@ -38,7 +39,7 @@ public class Broker {
                 e.printStackTrace();
             }
             stopRequested = true;
-            // System.exit(0);
+            System.exit(0);
         });
 
         stopThread.start();
@@ -56,19 +57,62 @@ public class Broker {
     }
 
     private void register(Message msg) {
-        InetSocketAddress addr = msg.getSender();
-        String id = "Tank" + idCounter++;
+        rwLock.writeLock().lock();
+        try {
+            InetSocketAddress addr = msg.getSender();
+            String id = "Tank" + idCounter++;
 
-        writeData(id, addr);
+            clients.add(id, addr);
 
-        RegisterResponse regRes = new RegisterResponse(id);
-        ENDPOINT.send(addr, regRes);
+            RegisterResponse regRes = new RegisterResponse(id);
+            ENDPOINT.send(addr, regRes);
+
+            // Send new neighbor update to the clients
+            int newClientIndex = clients.indexOf(id);
+            InetSocketAddress leftNeighbour = clients.getLeftNeighorOf(newClientIndex);
+            InetSocketAddress rightNeighbour = clients.getRightNeighorOf(newClientIndex);
+            
+            //an den neuen
+            ENDPOINT.send(addr, new NeighbourUpdate(rightNeighbour, Direction.RIGHT));
+            ENDPOINT.send(addr, new NeighbourUpdate(leftNeighbour, Direction.LEFT));
+
+            //an den linken Nachbarn
+            ENDPOINT.send(leftNeighbour, new NeighbourUpdate(addr, Direction.RIGHT));
+            ENDPOINT.send(leftNeighbour, new NeighbourUpdate(clients.getLeftNeighorOf(clients.indexOf(leftNeighbour)), Direction.LEFT));  
+
+            //an den rechten Nachbarn
+            ENDPOINT.send(rightNeighbour, new NeighbourUpdate(clients.getRightNeighorOf(clients.indexOf(rightNeighbour)), Direction.RIGHT));
+            ENDPOINT.send(rightNeighbour, new NeighbourUpdate(addr, Direction.LEFT));
+        } finally {
+            rwLock.writeLock().unlock();
+        } 
     }
 
     private void deregister(Message msg) {
-        DeregisterRequest req = (DeregisterRequest) msg.getPayload();
-        int index = clients.indexOf(req.getId());
-        deleteData(index);
+        rwLock.writeLock().lock();
+        try {
+            DeregisterRequest req = (DeregisterRequest) msg.getPayload();
+            int index = clients.indexOf(req.getId());
+
+            InetSocketAddress leftNeighbour = clients.getLeftNeighorOf(index);
+            InetSocketAddress rightNeighbour = clients.getRightNeighorOf(index);
+
+            clients.remove(index);
+
+            if (clients.size() == 0) {
+                return;
+            }
+
+            //an den rechten Nachbarn
+            ENDPOINT.send(rightNeighbour, new NeighbourUpdate(leftNeighbour, Direction.LEFT));
+            ENDPOINT.send(rightNeighbour, new NeighbourUpdate(clients.getRightNeighorOf(clients.indexOf(rightNeighbour)), Direction.RIGHT));
+
+            //an den linken Nachbarn
+            ENDPOINT.send(leftNeighbour, new NeighbourUpdate(clients.getLeftNeighorOf(clients.indexOf(leftNeighbour)), Direction.LEFT));
+            ENDPOINT.send(leftNeighbour, new NeighbourUpdate(rightNeighbour, Direction.RIGHT));
+        } finally {
+            rwLock.writeLock().unlock();
+        } 
     }
 
     private void handoffFish(Message msg) {
@@ -91,20 +135,11 @@ public class Broker {
 
     private void readAndUseData(Message msg) {
         rwLock.readLock().lock();
-        handoffFish(msg);
-        rwLock.readLock().unlock();
-    }
-
-    private void writeData(String id, InetSocketAddress addr) {
-        rwLock.writeLock().lock();
-        clients.add(id, addr);
-        rwLock.writeLock().unlock();
-    }
-
-    private void deleteData(int index) {
-        rwLock.writeLock().lock();
-        clients.remove(index);
-        rwLock.writeLock().unlock();
+        try {
+            handoffFish(msg);
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     private class BrokerTask implements Runnable {

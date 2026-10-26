@@ -10,6 +10,7 @@ import aqua.blatt1.common.msgtypes.DeregisterRequest;
 import aqua.blatt1.common.msgtypes.HandoffRequest;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
+import aqua.blatt1.common.msgtypes.NeighbourUpdate;
 
 public class ClientCommunicator {
 	private final Endpoint endpoint;
@@ -33,8 +34,8 @@ public class ClientCommunicator {
 			endpoint.send(broker, new DeregisterRequest(id));
 		}
 
-		public void handOff(FishModel fish) {
-			endpoint.send(broker, new HandoffRequest(fish));
+		public void handOff(FishModel fish, InetSocketAddress neighbour) {
+			endpoint.send(neighbour, new HandoffRequest(fish));
 		}
 	}
 
@@ -55,6 +56,10 @@ public class ClientCommunicator {
 
 				if (msg.getPayload() instanceof HandoffRequest)
 					tankModel.receiveFish(((HandoffRequest) msg.getPayload()).getFish());
+
+				if (msg.getPayload() instanceof NeighbourUpdate) {
+					tankModel.updateNeighbor(((NeighbourUpdate) msg.getPayload()).getDirection(), ((NeighbourUpdate) msg.getPayload()).getNewNeighborAddress());
+				}
 
 			}
 			System.out.println("Receiver stopped.");

@@ -26,9 +26,7 @@ public interface TankModel extends Iterable<FishModel> {
 
     void receiveFish(FishModel fish);
 
-    default void updateNeighbor(Direction direction, InetSocketAddress address) {
-        throw new RuntimeException("Not implemented yet");
-    }
+    void updateNeighbor(Direction direction, InetSocketAddress address);
 
     default void receiveToken() {
         throw new RuntimeException("Not implemented yet");
