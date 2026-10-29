@@ -79,9 +79,11 @@ public class Broker {
 
             //an den linken Nachbarn
             ENDPOINT.send(leftNeighbour, new NeighbourUpdate(addr, Direction.RIGHT));
+            // Unnötig? Der Linke Nachbarn vom linken Nachbarn ändert sich ja nicht.
             ENDPOINT.send(leftNeighbour, new NeighbourUpdate(clients.getLeftNeighorOf(clients.indexOf(leftNeighbour)), Direction.LEFT));  
 
             //an den rechten Nachbarn
+            // Hier genauso?
             ENDPOINT.send(rightNeighbour, new NeighbourUpdate(clients.getRightNeighorOf(clients.indexOf(rightNeighbour)), Direction.RIGHT));
             ENDPOINT.send(rightNeighbour, new NeighbourUpdate(addr, Direction.LEFT));
 
