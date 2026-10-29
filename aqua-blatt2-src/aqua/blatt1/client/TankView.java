@@ -1,5 +1,6 @@
 package aqua.blatt1.client;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -34,8 +35,10 @@ public class TankView extends JPanel {
 		});
 	}
 
-	@SuppressWarnings("unused")
 	private void drawBorders(Graphics2D g2d) {
+		// dick und rot, sonst verschwindet die 1px-Linie im Fensterrahmen
+		g2d.setColor(Color.RED);
+		g2d.setStroke(new BasicStroke(6));
 		g2d.drawLine(0, 0, 0, TankModelImpl.HEIGHT);
 		g2d.drawLine(TankModel.WIDTH - 1, 0, TankModel.WIDTH - 1, TankModel.HEIGHT);
 	}
@@ -47,9 +50,10 @@ public class TankView extends JPanel {
 			g2d.drawImage(fishView.getImage(fishModel), fishModel.getX(), fishModel.getY(), null);
 			g2d.drawString(fishModel.getId(), fishModel.getX(), fishModel.getY());
 
-			if (!tankModel.hasToken()) {
-				drawBorders(g2d);
-			}
+		}
+		
+		if (!tankModel.hasToken()) {
+			drawBorders(g2d);
 		}
 
 	}

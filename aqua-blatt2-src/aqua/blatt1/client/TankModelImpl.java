@@ -119,7 +119,7 @@ public class TankModelImpl implements TankModel {
 	}
 
 	@Override
-	public void receiveToken() {
+	synchronized public void receiveToken() {
 		hasToken = true;
 
 		timer.schedule(new TimerTask() {
