@@ -21,6 +21,9 @@ public class TankModelImpl implements TankModel {
 	protected int fishCounter = 0;
 	protected final ClientCommunicator.ClientForwarder forwarder;
 
+	protected InetSocketAddress leftAddress;
+	protected InetSocketAddress rightAddress;
+
 	public TankModelImpl(ClientCommunicator.ClientForwarder forwarder) {
 		this.fishies = Collections.newSetFromMap(new ConcurrentHashMap<FishModel, Boolean>());
 		this.forwarder = forwarder;
@@ -51,6 +54,14 @@ public class TankModelImpl implements TankModel {
 		fishies.add(fish);
 	}
 
+	@Override
+	public void updateNeighbor(Direction direction, InetSocketAddress address) {
+		if (direction == Direction.LEFT)
+			this.leftAddress = address;
+		if (direction == Direction.RIGHT)
+			this.rightAddress = address;
+	}
+
 	public String getId() {
 		return id;
 	}
@@ -69,8 +80,12 @@ public class TankModelImpl implements TankModel {
 
 			fish.update();
 
-			if (fish.hitsEdge())
-				forwarder.handOff(fish);
+			if (fish.hitsEdge()) {
+				if (fish.getDirection() == Direction.LEFT)
+					forwarder.handOff(fish, leftAddress);
+				if (fish.getDirection() == Direction.RIGHT)
+					forwarder.handOff(fish, rightAddress);
+			}
 
 			if (fish.disappears())
 				it.remove();

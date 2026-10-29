@@ -10,6 +10,7 @@ import aqua.blatt1.common.msgtypes.DeregisterRequest;
 import aqua.blatt1.common.msgtypes.HandoffRequest;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
+import aqua.blatt1.common.msgtypes.NeighbourUpdate;
 import messaging.Endpoint;
 import messaging.Message;
 
@@ -17,6 +18,7 @@ public class Broker {
 
     private final Endpoint endpoint;
     private final ClientCollection<InetSocketAddress> clients;
+    private int nextClientId = 0;
 
     public Broker(Endpoint endpoint, ClientCollection<InetSocketAddress> clients) {
         this.endpoint = endpoint;
@@ -42,17 +44,41 @@ public class Broker {
     }
 
     private String register(Message message) {
-        String clientId = "tank" + clients.size();
-        clients.add(clientId, message.getSender());
-        endpoint.send(message.getSender(), new RegisterResponse(clientId));
+        String clientId = "tank" + nextClientId++;
+        InetSocketAddress clientAddress = message.getSender();
+
+        clients.add(clientId, clientAddress);
+
+        endpoint.send(clientAddress, new RegisterResponse(clientId));
         System.out.println("Registered new client with id " + clientId);
+
+        InetSocketAddress leftClientAddress = clients.getLeftNeighorOf(clients.size() - 1);
+        InetSocketAddress rightClientAddress = clients.getRightNeighorOf(clients.size() - 1);
+
+        endpoint.send(clientAddress, new NeighbourUpdate(leftClientAddress, Direction.LEFT));
+        endpoint.send(clientAddress, new NeighbourUpdate(rightClientAddress, Direction.RIGHT));
+        endpoint.send(leftClientAddress, new NeighbourUpdate(clientAddress, Direction.RIGHT));
+        endpoint.send(rightClientAddress, new NeighbourUpdate(clientAddress, Direction.LEFT));
+        
         return clientId;
     }
 
     private ClientCollection<InetSocketAddress> deregister(DeregisterRequest request) {
         String clientId = request.getId();
-        int index = Integer.parseInt(clientId.replace("tank", ""));
+        int index = clients.indexOf(clientId);
+        if (index == -1) {
+            System.out.println("Unknown client id " + clientId);
+            return clients;
+        }
+
         System.out.println("Client deregistered with id " + clientId);
+
+        InetSocketAddress leftClientAddress = clients.getLeftNeighorOf(index);
+        InetSocketAddress rightClientAddress = clients.getRightNeighorOf(index);
+
+        endpoint.send(leftClientAddress, new NeighbourUpdate(rightClientAddress, Direction.RIGHT));
+        endpoint.send(rightClientAddress, new NeighbourUpdate(leftClientAddress , Direction.LEFT));
+
         return clients.remove(index);
     }
 
