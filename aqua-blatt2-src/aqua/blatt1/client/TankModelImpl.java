@@ -115,6 +115,8 @@ public class TankModelImpl implements TankModel {
 	@Override
 	public synchronized void finish() {
 		timer.cancel();
+		hasToken = false;
+		forwarder.sendToken(leftNeighbor);
 		forwarder.deregister(id);
 	}
 
@@ -127,7 +129,7 @@ public class TankModelImpl implements TankModel {
 			public void run() {
 				synchronized (TankModelImpl.this) {
 					hasToken = false;
-				forwarder.sendToken(leftNeighbor);
+					forwarder.sendToken(leftNeighbor);
 				}
 			}
     	}, 2000L);
