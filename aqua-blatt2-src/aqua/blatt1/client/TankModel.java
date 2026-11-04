@@ -2,7 +2,7 @@ package aqua.blatt1.client;
 
 import aqua.blatt1.common.Direction;
 import aqua.blatt1.common.FishModel;
-//import aqua.blatt4.client.RecordingMode;
+import aqua.blatt1.common.msgtypes.SnapshotToken;
 
 import java.net.InetSocketAddress;
 
@@ -37,6 +37,10 @@ public interface TankModel extends Iterable<FishModel> {
     }
 
     default void receiveSnapshotMarker(InetSocketAddress sender) {
+        throw new RuntimeException("Not implemented yet");
+    }
+
+    default void receiveSnapshotToken(SnapshotToken token) {
         throw new RuntimeException("Not implemented yet");
     }
 

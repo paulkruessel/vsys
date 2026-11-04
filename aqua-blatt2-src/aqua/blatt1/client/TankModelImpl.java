@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit;
 
 import aqua.blatt1.common.Direction;
 import aqua.blatt1.common.FishModel;
+import aqua.blatt1.common.msgtypes.SnapshotToken;
+import aqua.blatt4.client.RecordingMode;
 
 public class TankModelImpl implements TankModel {
 
@@ -28,6 +30,17 @@ public class TankModelImpl implements TankModel {
 
 	private boolean hasToken = false;
 	private final Timer timer = new Timer("TokenTimer", true);
+
+	// Blatt 4
+	private int localState;
+	private RecordingMode recordingMode = RecordingMode.IDLE;
+	private boolean isInitiator = false;
+	private boolean localSnapshotTaken = false;
+	private boolean localSnapshotDone = false;
+	private SnapshotToken snapshotToken;
+
+	private boolean globalSnapshotFlag = false;
+	private int globalSnapshot;
 
 	public TankModelImpl(ClientCommunicator.ClientForwarder forwarder) {
 		this.fishies = Collections.newSetFromMap(new ConcurrentHashMap<FishModel, Boolean>());
@@ -65,6 +78,16 @@ public class TankModelImpl implements TankModel {
 	synchronized public void receiveFish(FishModel fish) {
 		fish.setToStart();
 		fishies.add(fish);
+
+		if (localSnapshotTaken && !localSnapshotDone) {
+			RecordingMode from = (fish.getDirection() == Direction.RIGHT)
+				? RecordingMode.LEFT
+				: RecordingMode.RIGHT;
+
+			if (recordingMode == RecordingMode.BOTH || recordingMode == from) {
+				localState++;
+			}
+		}
 	}
 
 	public String getId() {
@@ -139,6 +162,93 @@ public class TankModelImpl implements TankModel {
 	@Override
 	public synchronized boolean hasToken() {
 		return hasToken;
+	}
+
+	@Override
+	public synchronized void initiateSnapshot() {
+		if (localSnapshotTaken) return;
+
+		localState = (int) fishies.stream().filter(f -> !f.isDeparting()).count();
+		isInitiator = true;
+		localSnapshotTaken = true;
+		recordingMode = RecordingMode.BOTH;
+
+		forwarder.sendSnapshotMarker(leftNeighbor);
+		forwarder.sendSnapshotMarker(rightNeighbor);
+	}
+
+	@Override
+	public synchronized void receiveSnapshotMarker(InetSocketAddress sender) {
+
+		RecordingMode channel;
+		RecordingMode otherChannel;
+		if (sender.equals(leftNeighbor)) {
+			channel = RecordingMode.LEFT;
+			otherChannel = RecordingMode.RIGHT;
+		} else {
+			channel = RecordingMode.RIGHT;
+			otherChannel = RecordingMode.LEFT;
+		}
+
+		if (!localSnapshotTaken) {
+			localSnapshotTaken = true;
+			localState = (int) fishies.stream().filter(f -> !f.isDeparting()).count();
+
+			recordingMode = otherChannel;
+		} else if (recordingMode == channel || leftNeighbor.equals(rightNeighbor) ) {
+			recordingMode = RecordingMode.IDLE;
+		}
+
+		if (!localSnapshotDone && recordingMode == RecordingMode.IDLE) {
+			localSnapshotDone = true;
+
+			if (isInitiator) {
+				forwarder.sendSnapshotToken(leftNeighbor, new SnapshotToken(this.id, localState));
+			} else if (this.snapshotToken != null) {
+				this.snapshotToken.setSum(this.snapshotToken.getSum() + localState);
+				forwarder.sendSnapshotToken(leftNeighbor, this.snapshotToken);
+				resetSnapshot();
+			}
+		}
+	}
+
+	@Override
+	public synchronized void receiveSnapshotToken(SnapshotToken token) {
+		if (token.getInitiatorId().equals(id)) {
+			globalSnapshot = token.getSum();
+			globalSnapshotFlag = true;
+			resetSnapshot();
+			return;
+		}
+
+		if (localSnapshotDone) {
+			token.setSum(token.getSum() + localState);
+			forwarder.sendSnapshotToken(leftNeighbor, token);
+			resetSnapshot();
+		} else {
+			snapshotToken = token;
+		}
+	}
+
+	@Override 
+	public synchronized int getGlobalSnapshot() {
+		return globalSnapshot;
+	}
+
+	@Override
+	public synchronized boolean checkAndClearGlobalSnapshotFlag() {
+        boolean flag = globalSnapshotFlag;
+		globalSnapshotFlag = false;
+		return flag;
+    }
+
+	private void resetSnapshot() {
+		localState = 0;
+		recordingMode = RecordingMode.IDLE;
+		isInitiator = false;
+		localSnapshotTaken = false;
+		localSnapshotDone = false;
+		snapshotToken = null;
 	}
 
 }

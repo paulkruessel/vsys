@@ -10,6 +10,8 @@ import aqua.blatt1.common.msgtypes.DeregisterRequest;
 import aqua.blatt1.common.msgtypes.HandoffRequest;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
+import aqua.blatt1.common.msgtypes.SnapshotMarker;
+import aqua.blatt1.common.msgtypes.SnapshotToken;
 import aqua.blatt1.common.msgtypes.NeighbourUpdate;
 import aqua.blatt1.common.msgtypes.Token;
 
@@ -42,6 +44,14 @@ public class ClientCommunicator {
 		public void sendToken(InetSocketAddress neighbour) {
 			endpoint.send(neighbour, new Token());
 		}
+
+		public void sendSnapshotMarker(InetSocketAddress neighbour) {
+			endpoint.send(neighbour, new SnapshotMarker());
+		}
+
+		public void sendSnapshotToken(InetSocketAddress neighbour, SnapshotToken token) {
+			endpoint.send(neighbour, token);
+		}
 	}
 
 	public class ClientReceiver extends Thread {
@@ -68,6 +78,14 @@ public class ClientCommunicator {
 
 				if (msg.getPayload() instanceof Token) {
 					tankModel.receiveToken();
+				}
+
+				if (msg.getPayload() instanceof SnapshotMarker) {
+					tankModel.receiveSnapshotMarker(msg.getSender());
+				}
+
+				if (msg.getPayload() instanceof SnapshotToken token) {
+					tankModel.receiveSnapshotToken(token);
 				}
 
 			}

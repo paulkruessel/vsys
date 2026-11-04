@@ -51,7 +51,7 @@ public class AquaGui extends JFrame {
 		JMenuItem gsMenuItem = new JMenuItem("Global Snapshot");
 		toolsMenu.add(gsMenuItem);
 
-		gsMenuItem.addActionListener(new NotImplementedYetController(this));
+		gsMenuItem.addActionListener(new SnapshotController(tankModel));
 		setVisible(true);
 
 		searchMenu = new JMenu("Toggle Fish Color...");

@@ -10,6 +10,7 @@ import java.awt.event.MouseEvent;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -54,6 +55,12 @@ public class TankView extends JPanel {
 		
 		if (!tankModel.hasToken()) {
 			drawBorders(g2d);
+		}
+
+		if (tankModel.checkAndClearGlobalSnapshotFlag()) {
+			int sum = tankModel.getGlobalSnapshot();
+			SwingUtilities.invokeLater(() ->
+				JOptionPane.showMessageDialog(this, "Globaler Snapshot: " + sum + " Fische"));
 		}
 
 	}
