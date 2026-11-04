@@ -195,6 +195,10 @@ public class TankModelImpl implements TankModel {
 			localState = (int) fishies.stream().filter(f -> !f.isDeparting()).count();
 
 			recordingMode = otherChannel;
+			forwarder.sendSnapshotMarker(leftNeighbor);
+			forwarder.sendSnapshotMarker(rightNeighbor);
+		} else if (recordingMode == RecordingMode.BOTH) {
+			recordingMode = otherChannel;
 		} else if (recordingMode == channel || leftNeighbor.equals(rightNeighbor) ) {
 			recordingMode = RecordingMode.IDLE;
 		}

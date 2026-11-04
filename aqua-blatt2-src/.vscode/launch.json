@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "aqua.blatt1.broker.Main",
+            "projectName": "aqua-blatt2-src_c4ec6f4c"
+        },
+        {
+            "type": "java",
             "name": "Poisoner",
             "request": "launch",
             "mainClass": "aqua.blatt1.broker.Poisoner",
