@@ -11,6 +11,7 @@ import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.JPanel;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import aqua.blatt1.common.FishModel;
@@ -33,6 +34,15 @@ public class TankView extends JPanel {
 				tankModel.newFish(e.getX(), e.getY());
 			}
 		});
+	}
+
+	public void update() {
+		if (tankModel.checkAndClearGlobalSnapshotFlag()) {
+			int globalSnapshot = tankModel.getGlobalSnapshot();
+			SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+					"Globaler Schnappschuss: " + globalSnapshot + " Fische",
+					"Global Snapshot", JOptionPane.INFORMATION_MESSAGE));
+		}
 	}
 
 	private void drawBorders(Graphics2D g2d) {

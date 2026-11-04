@@ -6,12 +6,7 @@ import messaging.Endpoint;
 import messaging.Message;
 import aqua.blatt1.common.FishModel;
 import aqua.blatt1.common.Properties;
-import aqua.blatt1.common.msgtypes.DeregisterRequest;
-import aqua.blatt1.common.msgtypes.HandoffRequest;
-import aqua.blatt1.common.msgtypes.RegisterRequest;
-import aqua.blatt1.common.msgtypes.RegisterResponse;
-import aqua.blatt1.common.msgtypes.NeighbourUpdate;
-import aqua.blatt1.common.msgtypes.Token;
+import aqua.blatt1.common.msgtypes.*;
 
 public class ClientCommunicator {
 	private final Endpoint endpoint;
@@ -42,6 +37,14 @@ public class ClientCommunicator {
 		public void sendToken(InetSocketAddress neighbour) {
 			endpoint.send(neighbour, new Token());
 		}
+
+		public void sendSnapshotMarker(InetSocketAddress neighbour) {
+			endpoint.send(neighbour, new SnapshotMarker());
+		}
+
+		public void sendCollectSnapshotToken(CollectSnapshotToken token, InetSocketAddress neighbour) {
+			endpoint.send(neighbour, token);
+		}
 	}
 
 	public class ClientReceiver extends Thread {
@@ -60,7 +63,7 @@ public class ClientCommunicator {
 					tankModel.onRegistration(((RegisterResponse) msg.getPayload()).getId());
 
 				if (msg.getPayload() instanceof HandoffRequest)
-					tankModel.receiveFish(((HandoffRequest) msg.getPayload()).getFish());
+					tankModel.receiveFish(((HandoffRequest) msg.getPayload()).getFish(), msg.getSender());
 
 				if (msg.getPayload() instanceof NeighbourUpdate) {
 					tankModel.updateNeighbor(((NeighbourUpdate) msg.getPayload()).getDirection(), ((NeighbourUpdate) msg.getPayload()).getNewNeighborAddress());
@@ -68,6 +71,14 @@ public class ClientCommunicator {
 
 				if (msg.getPayload() instanceof Token) {
 					tankModel.receiveToken();
+				}
+
+				if (msg.getPayload() instanceof SnapshotMarker) {
+					tankModel.receiveSnapshotMarker(msg.getSender());
+				}
+
+				if (msg.getPayload() instanceof CollectSnapshotToken) {
+					tankModel.receiveCollectSnapshotToken((CollectSnapshotToken) msg.getPayload());
 				}
 
 			}

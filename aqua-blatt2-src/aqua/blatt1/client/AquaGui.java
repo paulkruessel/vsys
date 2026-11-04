@@ -14,6 +14,9 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 @SuppressWarnings("serial")
 public class AquaGui extends JFrame {
 	private final List<JMenuItem> fishMenuItems = Collections
@@ -51,7 +54,8 @@ public class AquaGui extends JFrame {
 		JMenuItem gsMenuItem = new JMenuItem("Global Snapshot");
 		toolsMenu.add(gsMenuItem);
 
-		gsMenuItem.addActionListener(new NotImplementedYetController(this));
+		gsMenuItem.addActionListener(new SnapshotController());
+
 		setVisible(true);
 
 		searchMenu = new JMenu("Toggle Fish Color...");
@@ -59,6 +63,7 @@ public class AquaGui extends JFrame {
 	}
 
 	public void update() {
+		tankView.update();
 		tankView.repaint();
 		setTitle(tankModel.getId());
 
@@ -69,6 +74,12 @@ public class AquaGui extends JFrame {
 			fishMenuItem.addActionListener(new NotImplementedYetController(this));
 			fishMenuItems.add(fishMenuItem);
 			searchMenu.add(fishMenuItem);
+		}
+	}
+
+	private class SnapshotController implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			tankModel.initiateSnapshot();
 		}
 	}
 }
