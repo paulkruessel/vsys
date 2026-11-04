@@ -1,6 +1,6 @@
 {
     "java.project.referencedLibraries": [
-        "c:\\Users\\vince\\Studium\\6.Semester\\Vsys\\aqua-blatt1-src\\aqua\\blatt1\\lib\\messaging.jar"
+        "${workspaceFolder}/aqua/blatt1/lib/messaging.jar"
     ],
     "java.project.sourcePaths": [
         "."
