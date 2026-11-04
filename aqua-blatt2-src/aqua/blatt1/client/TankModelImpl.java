@@ -1,16 +1,11 @@
 package aqua.blatt1.client;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Observable;
 import java.util.Random;
 import java.util.Set;
-import java.util.Map;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +40,6 @@ public class TankModelImpl implements TankModel {
 	private int globalSnapshot;
 	private boolean globalSnapshotAvailable;
 	private RecordingMode recordingMode = RecordingMode.IDLE;
-	private final Map<InetSocketAddress, List<FishModel>> channelState = new HashMap<>();
 	private CollectSnapshotToken pendingCollectSnapshotToken;
 	private final Set<FishModel> handedOffFishies = new HashSet<>();
 
@@ -82,10 +76,11 @@ public class TankModelImpl implements TankModel {
 	}
 
 	@Override
-	synchronized public void receiveFish(FishModel fish, InetSocketAddress sender) {
+	public synchronized void receiveFish(FishModel fish, InetSocketAddress sender) {
 		if (isRecordingFrom(sender)) {
-			channelState.get(sender).add(fish);
+			lokalSnapshot++;
 		}
+
 		fish.setToStart();
 		fishies.add(fish);
 	}
@@ -201,17 +196,8 @@ public class TankModelImpl implements TankModel {
 	}
 
 	private void startRecordingIncomingChannels() {
-		channelState.clear();
-
 		boolean left = leftNeighbor != null;
 		boolean right = rightNeighbor != null;
-
-		if (left) {
-			channelState.put(leftNeighbor, new ArrayList<>());
-		}
-		if (right) {
-			channelState.put(rightNeighbor, new ArrayList<>());
-		}
 
 		if (left && right) {
 			recordingMode = RecordingMode.BOTH;
@@ -222,6 +208,7 @@ public class TankModelImpl implements TankModel {
 		} else {
 			recordingMode = RecordingMode.IDLE;
 		}
+
 		snapshotComplete = recordingMode == RecordingMode.IDLE;
 	}
 
@@ -292,15 +279,19 @@ public class TankModelImpl implements TankModel {
 	}
 
 	private void processCollectSnapshotToken(CollectSnapshotToken token) {
-		int contribution = lokalSnapshot;
-		for (List<FishModel> recordedFish : channelState.values()) {
-			contribution += recordedFish.size();
-		}
-
 		if (token.getIniId().equals(id)) {
-			receiveSnapshotResult(token.getIniId(), token.getPopulation() + contribution);
+			receiveSnapshotResult(
+				token.getIniId(),
+				token.getPopulation() + lokalSnapshot
+			);
 		} else {
-			token.addPopulation(contribution);
+			token.addPopulation(lokalSnapshot);
+
+			if (leftNeighbor == null) {
+				throw new IllegalStateException(
+					"Cannot forward snapshot token without a left neighbor"
+				);
+			}
 
 			forwarder.sendCollectSnapshotToken(token, leftNeighbor);
 		}
@@ -308,10 +299,8 @@ public class TankModelImpl implements TankModel {
 		snapshotStarted = false;
 		snapshotComplete = false;
 		recordingMode = RecordingMode.IDLE;
-		channelState.clear();
 		lokalSnapshot = 0;
-	}
-
+}
 	private void processPendingCollectSnapshotToken() {
 		if (pendingCollectSnapshotToken != null) {
 			CollectSnapshotToken token = pendingCollectSnapshotToken;
