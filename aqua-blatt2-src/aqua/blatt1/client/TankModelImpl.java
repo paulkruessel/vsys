@@ -2,8 +2,10 @@ package aqua.blatt1.client;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
@@ -14,12 +16,16 @@ import java.util.concurrent.TimeUnit;
 import aqua.blatt1.common.Direction;
 import aqua.blatt1.common.FishModel;
 import aqua.blatt1.common.msgtypes.CollectSnapshotToken;
+import aqua.blatt1.common.msgtypes.LocationRequest;
 
 public class TankModelImpl implements TankModel {
 	private enum RecordingMode {
 		IDLE, LEFT, RIGHT, BOTH
 	}
 
+	private enum Location {
+		LEFT, RIGHT, HERE
+	}
 
 	protected static final int MAX_FISHIES = 5;
 	protected static final Random rand = new Random();
@@ -43,6 +49,8 @@ public class TankModelImpl implements TankModel {
 	private CollectSnapshotToken pendingCollectSnapshotToken;
 	private final Set<FishModel> handedOffFishies = new HashSet<>();
 
+	private Map<String, Location> fishLocation = new HashMap<>();
+
 	public TankModelImpl(ClientCommunicator.ClientForwarder forwarder) {
 		this.fishies = Collections.newSetFromMap(new ConcurrentHashMap<FishModel, Boolean>());
 		this.forwarder = forwarder;
@@ -56,6 +64,7 @@ public class TankModelImpl implements TankModel {
 			this.rightNeighbor = address;
 		}
 	}
+
 	@Override
 	synchronized public void onRegistration(String id) {
 		this.id = id;
@@ -72,6 +81,7 @@ public class TankModelImpl implements TankModel {
 					rand.nextBoolean() ? Direction.LEFT : Direction.RIGHT);
 
 			fishies.add(fish);
+			fishLocation.put(fish.getId(), Location.HERE);
 		}
 	}
 
@@ -83,6 +93,7 @@ public class TankModelImpl implements TankModel {
 
 		fish.setToStart();
 		fishies.add(fish);
+		fishLocation.put(fish.getId(), Location.HERE);
 	}
 
 	public String getId() {
@@ -107,8 +118,10 @@ public class TankModelImpl implements TankModel {
 				if (hasToken()) {
 					if (fish.getDirection() == Direction.LEFT) {
 						forwarder.handOff(fish, leftNeighbor);
+						fishLocation.put(fish.getId(), Location.LEFT);
 					} else {
 						forwarder.handOff(fish, rightNeighbor);
+						fishLocation.put(fish.getId(), Location.RIGHT);
 					}
 					handedOffFishies.add(fish);
 				} else {
@@ -300,7 +313,8 @@ public class TankModelImpl implements TankModel {
 		snapshotComplete = false;
 		recordingMode = RecordingMode.IDLE;
 		lokalSnapshot = 0;
-}
+	}
+
 	private void processPendingCollectSnapshotToken() {
 		if (pendingCollectSnapshotToken != null) {
 			CollectSnapshotToken token = pendingCollectSnapshotToken;
@@ -327,4 +341,28 @@ public class TankModelImpl implements TankModel {
 		return available;
 	}
 
+	@Override 
+	public synchronized void locateFishGlobally(String fishId) {
+		assert fishLocation.containsKey(fishId);
+		System.out.println("Locating fish " + fishId + " globally. Location: " + fishLocation.get(fishId));
+
+		if (fishLocation.get(fishId) == Location.HERE) {
+			locateFishLocally(fishId);
+		} else if (fishLocation.get(fishId) == Location.LEFT) {
+			forwarder.sendLocationRequest(new LocationRequest(fishId), leftNeighbor);
+		} else if (fishLocation.get(fishId) == Location.RIGHT) {
+			forwarder.sendLocationRequest(new LocationRequest(fishId), rightNeighbor);
+		}
+
+	}
+
+	private synchronized void locateFishLocally(String fishId) {
+		for (FishModel fish : fishies) {
+			if (fish.getId().equals(fishId)) {
+				fish.toggle();
+				return;
+			}
+		}
+	}
+	
 }

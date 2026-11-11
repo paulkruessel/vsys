@@ -45,6 +45,10 @@ public class ClientCommunicator {
 		public void sendCollectSnapshotToken(CollectSnapshotToken token, InetSocketAddress neighbour) {
 			endpoint.send(neighbour, token);
 		}
+
+		public void sendLocationRequest(LocationRequest token, InetSocketAddress neighbour) {
+			endpoint.send(neighbour, token);
+		}
 	}
 
 	public class ClientReceiver extends Thread {
@@ -79,6 +83,10 @@ public class ClientCommunicator {
 
 				if (msg.getPayload() instanceof CollectSnapshotToken) {
 					tankModel.receiveCollectSnapshotToken((CollectSnapshotToken) msg.getPayload());
+				}
+
+				if (msg.getPayload() instanceof LocationRequest) {
+					tankModel.locateFishGlobally(((LocationRequest) msg.getPayload()).getFishId());
 				}
 
 			}
