@@ -49,6 +49,14 @@ public class ClientCommunicator {
 		public void sendLocationRequest(LocationRequest token, InetSocketAddress neighbour) {
 			endpoint.send(neighbour, token);
 		}
+
+		public void sendNameResolutionRequest(NameResolutionRequest request) {
+			endpoint.send(broker, request);
+		}
+
+		public void sendLocationUpdate(LocationUpdate token, InetSocketAddress target) {
+			endpoint.send(target, token);
+		}
 	}
 
 	public class ClientReceiver extends Thread {
@@ -86,7 +94,18 @@ public class ClientCommunicator {
 				}
 
 				if (msg.getPayload() instanceof LocationRequest) {
-					tankModel.locateFishGlobally(((LocationRequest) msg.getPayload()).getFishId());
+					tankModel.locateFishLocally(((LocationRequest) msg.getPayload()).getFishId());
+				}
+
+				if (msg.getPayload() instanceof LocationUpdate) {
+					LocationUpdate update = (LocationUpdate) msg.getPayload();
+					tankModel.receiveLocationUpdate(update.getFishId(), msg.getSender());
+				}
+
+				if (msg.getPayload() instanceof NameResolutionResponse) {
+					NameResolutionResponse response = (NameResolutionResponse) msg.getPayload();
+					tankModel.receiveNameResolutionResponse(response.getRequestId(), response.getTankAddress());
+
 				}
 
 			}

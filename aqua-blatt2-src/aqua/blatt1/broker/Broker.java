@@ -1,6 +1,8 @@
 package aqua.blatt1.broker;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -11,6 +13,8 @@ import javax.swing.JOptionPane;
 import aqua.blatt1.common.FishModel;
 import aqua.blatt1.common.msgtypes.DeregisterRequest;
 import aqua.blatt1.common.msgtypes.HandoffRequest;
+import aqua.blatt1.common.msgtypes.NameResolutionRequest;
+import aqua.blatt1.common.msgtypes.NameResolutionResponse;
 import aqua.blatt1.common.msgtypes.NeighbourUpdate;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
@@ -151,6 +155,21 @@ public class Broker {
         }
     }
 
+    private void createAndSendNameResolutionResponse(Message msg) {
+        NameResolutionRequest req = (NameResolutionRequest) msg.getPayload();
+        InetSocketAddress tankAddress = null;
+        rwLock.readLock().lock();
+        try {
+            int index = clients.indexOf(req.getTankId());
+            if (index >= 0) {
+                tankAddress = clients.getClient(index);
+            }
+        } finally {
+            rwLock.readLock().unlock();
+        }
+        ENDPOINT.send(msg.getSender(), new NameResolutionResponse(tankAddress, req.getRequestId()));
+    }
+
     private class BrokerTask implements Runnable {
         private final Message msg;
 
@@ -170,6 +189,9 @@ public class Broker {
             }
             if (msg.getPayload() instanceof PoisonPill) {
                 System.exit(0);
+            }
+            if (msg.getPayload() instanceof NameResolutionRequest) {
+                createAndSendNameResolutionResponse(msg);
             }
         }
     }
