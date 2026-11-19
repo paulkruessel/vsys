@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
@@ -130,6 +131,22 @@ public class TankModelImpl implements TankModel {
 
 			if (fish.disappears())
 				it.remove();
+		}
+	}
+
+	@Override 
+	public void locateFishGlobally(String fishId) {
+		FishState fishState = fishMap.get(fishId);
+
+		if (fishState == FishState.HERE) {
+			fishies.stream().filter(f -> f.getId().equals(fishId))
+				.findFirst().ifPresent(FishModel::toggle);
+		}
+		if (fishState == FishState.LEFT) {
+			forwarder.sendLocationRequest(leftNeighbor, fishId);
+		}
+		if (fishState == FishState.RIGHT) {
+			forwarder.sendLocationRequest(rightNeighbor, fishId);
 		}
 	}
 

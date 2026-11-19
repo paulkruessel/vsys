@@ -66,7 +66,7 @@ public class AquaGui extends JFrame {
 		while (tankModel.getFishCounter() > size) {
 			String fishId = "fish" + (++size) + "@" + tankModel.getId();
 			JMenuItem fishMenuItem = new JMenuItem(fishId);
-			fishMenuItem.addActionListener(new NotImplementedYetController(this));
+			fishMenuItem.addActionListener(new ToggleController(tankModel, fishId));
 			fishMenuItems.add(fishMenuItem);
 			searchMenu.add(fishMenuItem);
 		}

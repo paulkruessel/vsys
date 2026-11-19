@@ -8,6 +8,8 @@ import aqua.blatt1.common.FishModel;
 import aqua.blatt1.common.Properties;
 import aqua.blatt1.common.msgtypes.DeregisterRequest;
 import aqua.blatt1.common.msgtypes.HandoffRequest;
+import aqua.blatt1.common.msgtypes.LocationRequest;
+import aqua.blatt1.common.msgtypes.NameResolutionRequest;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
 import aqua.blatt1.common.msgtypes.SnapshotMarker;
@@ -52,6 +54,14 @@ public class ClientCommunicator {
 		public void sendSnapshotToken(InetSocketAddress neighbour, SnapshotToken token) {
 			endpoint.send(neighbour, token);
 		}
+
+		public void sendLocationRequest(InetSocketAddress address, String fishId) {
+			endpoint.send(address, new LocationRequest(fishId));
+		}
+
+		public void sendNameResolveRequest(InetSocketAddress address, NameResolutionRequest request) {
+			endpoint.send(address, request);
+		}
 	}
 
 	public class ClientReceiver extends Thread {
@@ -86,6 +96,10 @@ public class ClientCommunicator {
 
 				if (msg.getPayload() instanceof SnapshotToken token) {
 					tankModel.receiveSnapshotToken(token);
+				}
+
+				if (msg.getPayload() instanceof LocationRequest request) {
+					tankModel.locateFishGlobally(request.getFishId());
 				}
 
 			}
