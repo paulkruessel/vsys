@@ -9,7 +9,9 @@ import aqua.blatt1.common.Properties;
 import aqua.blatt1.common.msgtypes.DeregisterRequest;
 import aqua.blatt1.common.msgtypes.HandoffRequest;
 import aqua.blatt1.common.msgtypes.LocationRequest;
+import aqua.blatt1.common.msgtypes.LocationUpdate;
 import aqua.blatt1.common.msgtypes.NameResolutionRequest;
+import aqua.blatt1.common.msgtypes.NameResolutionResponse;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
 import aqua.blatt1.common.msgtypes.SnapshotMarker;
@@ -59,8 +61,12 @@ public class ClientCommunicator {
 			endpoint.send(address, new LocationRequest(fishId));
 		}
 
-		public void sendNameResolveRequest(InetSocketAddress address, NameResolutionRequest request) {
-			endpoint.send(address, request);
+		public void sendNameResolveRequest(String tankId, String fishId) {
+			endpoint.send(broker, new NameResolutionRequest(tankId, fishId));
+		}
+		
+		public void sendLocationUpdate(InetSocketAddress homeTank, String fishId) {
+			endpoint.send(homeTank, new LocationUpdate(fishId));
 		}
 	}
 
@@ -100,6 +106,18 @@ public class ClientCommunicator {
 
 				if (msg.getPayload() instanceof LocationRequest request) {
 					tankModel.locateFishGlobally(request.getFishId());
+				}
+
+				if (msg.getPayload() instanceof LocationRequest request) {
+					tankModel.locateFishLocally(request.getFishId());
+				}
+
+				if (msg.getPayload() instanceof NameResolutionResponse response) {
+					tankModel.receiveNameResolutionResponse(response.getRequestId(), response.getTargetAddress());
+				}
+
+				if (msg.getPayload() instanceof LocationUpdate update) {
+					tankModel.receiveLocationUpdate(update.getFishId(), msg.getSender());
 				}
 
 			}

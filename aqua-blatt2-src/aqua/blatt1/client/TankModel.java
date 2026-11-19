@@ -59,6 +59,10 @@ public interface TankModel extends Iterable<FishModel> {
     default void locateFishGlobally(String fishId) {
         throw new RuntimeException("Not implemented yet");
     }
+    
+    default void locateFishLocally(String fishId) {
+        throw new RuntimeException("Not implemented yet");
+    }
 
     default void receiveNameResolutionResponse(String requestId, InetSocketAddress address) {
         throw new RuntimeException("Not implemented yet");
