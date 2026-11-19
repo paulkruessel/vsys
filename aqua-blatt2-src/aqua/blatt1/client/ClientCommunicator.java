@@ -108,10 +108,6 @@ public class ClientCommunicator {
 					tankModel.locateFishGlobally(request.getFishId());
 				}
 
-				if (msg.getPayload() instanceof LocationRequest request) {
-					tankModel.locateFishLocally(request.getFishId());
-				}
-
 				if (msg.getPayload() instanceof NameResolutionResponse response) {
 					tankModel.receiveNameResolutionResponse(response.getRequestId(), response.getTargetAddress());
 				}
