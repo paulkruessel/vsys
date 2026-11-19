@@ -1,7 +1,9 @@
 package aqua.blatt1.broker;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
  * This class is not thread-safe and hence must be used in a thread-safe way, e.g. thread confined or 
@@ -20,18 +22,22 @@ public class ClientCollection<T> {
 	}
 
 	private final List<Client> clients;
+	private final Map<String, Client> clientMap;
 
 	public ClientCollection() {
 		clients = new ArrayList<Client>();
+		clientMap = new HashMap<>();
 	}
 
 	public ClientCollection<T> add(String id, T client) {
 		clients.add(new Client(id, client));
+		clientMap.put(id, new Client(id, client));
 		return this;
 	}
 
 	public ClientCollection<T> remove(int index) {
-		clients.remove(index);
+		Client clientToRemove = clients.remove(index);
+		clientMap.remove(clientToRemove.id);
 		return this;
 	}
 
@@ -49,8 +55,12 @@ public class ClientCollection<T> {
 		return -1;
 	}
 
-	public T getClient(int index) {
+	public T getClientByIndex(int index) {
 		return clients.get(index).client;
+	}
+
+	public T getClientById(String id) {
+		return clientMap.get(id).client;
 	}
 
 	public int size() {
