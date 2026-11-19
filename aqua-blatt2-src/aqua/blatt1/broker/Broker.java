@@ -11,6 +11,8 @@ import javax.swing.JOptionPane;
 import aqua.blatt1.common.FishModel;
 import aqua.blatt1.common.msgtypes.DeregisterRequest;
 import aqua.blatt1.common.msgtypes.HandoffRequest;
+import aqua.blatt1.common.msgtypes.NameResolutionRequest;
+import aqua.blatt1.common.msgtypes.NameResolutionResponse;
 import aqua.blatt1.common.msgtypes.NeighbourUpdate;
 import aqua.blatt1.common.msgtypes.RegisterRequest;
 import aqua.blatt1.common.msgtypes.RegisterResponse;
@@ -133,11 +135,11 @@ public class Broker {
 
         if (dir == Direction.LEFT) {
             int leftIndex = (index == 0) ? clients.size() - 1 : index - 1;
-            InetSocketAddress leftAddr = (InetSocketAddress) clients.getClient(leftIndex);
+            InetSocketAddress leftAddr = (InetSocketAddress) clients.getClientByIndex(leftIndex);
             ENDPOINT.send(leftAddr, req);
         } else {
             int rightIndex = (index == clients.size() - 1) ? 0 : index + 1;
-            InetSocketAddress rightAddr = (InetSocketAddress) clients.getClient(rightIndex);
+            InetSocketAddress rightAddr = (InetSocketAddress) clients.getClientByIndex(rightIndex);
             ENDPOINT.send(rightAddr, req);
         }
     }
@@ -149,6 +151,15 @@ public class Broker {
         } finally {
             rwLock.readLock().unlock();
         }
+    }
+
+    private void resolveName(Message msg) {
+        NameResolutionRequest request = (NameResolutionRequest) msg.getPayload();
+
+        InetSocketAddress targetAddress = clients.getClientById(request.getTargetId());
+        NameResolutionResponse response = new NameResolutionResponse(targetAddress, request.getRequestId());
+
+        ENDPOINT.send(msg.getSender(), response);
     }
 
     private class BrokerTask implements Runnable {
@@ -170,6 +181,9 @@ public class Broker {
             }
             if (msg.getPayload() instanceof PoisonPill) {
                 System.exit(0);
+            }
+            if (msg.getPayload() instanceof NameResolutionRequest) {
+                resolveName(msg);
             }
         }
     }
