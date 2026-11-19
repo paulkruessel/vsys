@@ -3,17 +3,17 @@ package aqua.blatt1.client;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Observable;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import aqua.blatt1.common.Direction;
 import aqua.blatt1.common.FishModel;
 import aqua.blatt1.common.msgtypes.SnapshotToken;
+import aqua.blatt1.common.FishState;
 import aqua.blatt4.client.RecordingMode;
 
 public class TankModelImpl implements TankModel {
@@ -42,6 +42,9 @@ public class TankModelImpl implements TankModel {
 	private boolean globalSnapshotFlag = false;
 	private int globalSnapshot;
 
+	// Blatt 5
+	private Map<String, FishState> fishMap = new ConcurrentHashMap<>();
+
 	public TankModelImpl(ClientCommunicator.ClientForwarder forwarder) {
 		this.fishies = Collections.newSetFromMap(new ConcurrentHashMap<FishModel, Boolean>());
 		this.forwarder = forwarder;
@@ -69,7 +72,8 @@ public class TankModelImpl implements TankModel {
 
 			FishModel fish = new FishModel("fish" + (++fishCounter) + "@" + getId(), x, y,
 					rand.nextBoolean() ? Direction.LEFT : Direction.RIGHT);
-
+			
+			fishMap.put(fish.getId(), FishState.HERE);
 			fishies.add(fish);
 		}
 	}
@@ -78,6 +82,8 @@ public class TankModelImpl implements TankModel {
 	synchronized public void receiveFish(FishModel fish) {
 		fish.setToStart();
 		fishies.add(fish);
+
+		fishMap.put(fish.getId(), FishState.HERE);
 
 		if (localSnapshotTaken && !localSnapshotDone) {
 			RecordingMode from = (fish.getDirection() == Direction.RIGHT)
@@ -111,8 +117,10 @@ public class TankModelImpl implements TankModel {
 			if (fish.hitsEdge()) {
 				if (hasToken()) {
 					if (fish.getDirection() == Direction.LEFT) {
+						fishMap.put(fish.getId(), FishState.LEFT);
 						forwarder.handOff(fish, leftNeighbor);
 					} else {
+						fishMap.put(fish.getId(), FishState.RIGHT);
 						forwarder.handOff(fish, rightNeighbor);
 					}
 				} else {
